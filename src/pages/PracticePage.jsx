@@ -174,6 +174,7 @@ export default function PracticePage() {
   const [prevMetrics,  setPrevMetrics]  = useState({ wpm: 0, accuracy: 100, score: 0 });
   const [wpmHistory,   setWpmHistory]   = useState([]);
   const [capsLock,     setCapsLock]     = useState(false);
+  const [spaceError,   setSpaceError]   = useState(false);
 
   // ── Refs ──
   const audioRef       = useRef(null);
@@ -301,12 +302,21 @@ export default function PracticePage() {
     if (e.key === ' ') {
       e.preventDefault();
       if (!word || charIndex < word.length) return;
+      setSpaceError(false);
       const result = [...word].map((_,ci) => !charHasError.has(ci));
       setWordErrors(r => [...r, result]);
       setCharIndex(0); setCharHasError(new Set());
       const nextIdx = wordIndex + 1;
       if (nextIdx >= words.length) { finishLesson(result); }
       else setWordIndex(nextIdx);
+      return;
+    }
+
+    // Word complete but user pressed a non-space key — error, must press space
+    if (word && charIndex >= word.length && e.key.length === 1) {
+      playSound(false);
+      setSpaceError(true);
+      setTimeout(() => setSpaceError(false), 400);
       return;
     }
 
@@ -452,7 +462,12 @@ export default function PracticePage() {
 
         {/* Keyboard */}
         <div style={{ display:'flex', justifyContent:'center', marginTop:16 }}>
-          <Keyboard activeKey={activeKey} nextKey={currentChar||''} />
+          <Keyboard
+            activeKey={activeKey}
+            nextKey={currentChar || ''}
+            spaceWaiting={!finished && !!currentWord && charIndex >= currentWord.length}
+            spaceError={spaceError}
+          />
         </div>
       </main>
     </div>
