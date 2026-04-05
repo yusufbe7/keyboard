@@ -1,30 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import Keyboard from './components/Keyboard';
 import TextDisplay from './components/TextDisplay';
-import Stats from './components/Stats';
-
-const UNLOCK_ORDER = [
-  'a','n','i','r','e','l','t','o','s','u',
-  'd','y','g','h','p','w','b','k','f','c',
-  'v','m','x','z','q','j',
-];
+import InfoPanel from './components/InfoPanel';
+import { UNLOCK_ORDER, DAILY_GOAL_SECS } from './constants';
 
 // ── Word lists ────────────────────────────────────────────────
 const ALL_WORDS_EN = [
-  // 2–3 letters
   'an','in','on','no','or','us','go','he','we','me','be','so',
   'air','ran','ear','are','era','inn','nil','oil','lot','let',
   'net','ten','art','ant','tan','rat','tar','lie','lit','tin',
   'one','toe','ore','son','sun','run','old','tip','sir','sit',
-  'see','set','son','sue','tie','too','top','try','use','war',
-  'win','own','odd','off','oil','our','out','pay','put','row',
-  // 4 letters
+  'see','set','sue','tie','too','top','row','own','our','out',
   'rain','rein','earn','near','nine','rani','aria','rune',
   'real','lean','line','liar','rail','nail','lain','elan',
   'late','rate','tile','tale','note','tone','role','lone',
   'lion','loin','loan','toil','oral','iron','root','roll',
   'toll','rose','nose','lose','sole','sore','lore','rote',
-  'lute','tune','rune','lure','unit','iris','trio','arid',
+  'lute','tune','lure','unit','iris','trio','arid',
   'also','able','area','away','base','body','case','city',
   'come','data','days','done','door','down','draw','else',
   'even','face','fact','fall','fast','feel','fine','fire',
@@ -41,13 +33,12 @@ const ALL_WORDS_EN = [
   'term','test','text','tree','true','turn','type','used',
   'vast','very','view','walk','week','went','wide','wind',
   'wise','wish','word','work','year','zero',
-  // 5 letters
   'arena','inner','liner','alien','trail','trial','train',
   'later','alert','alter','elite','inlet','liter','title',
-  'atone','lotion','ratio','ornate','orient','elation',
-  'snore','store','stone','stole','toner','oiler','noise',
+  'atone','orient','ratio','ornate','elation',
+  'snore','store','stone','stole','toner','oiler',
   'route','outer','unite','ruins','round','sound','union',
-  'dusty','study','style','rusty','lusty','dusty',
+  'dusty','study','style','rusty',
   'grand','young','groan','grain','going','doing','along',
   'night','light','right','might','sight','thing','short',
   'plant','print','plain','place','point','stand','price',
@@ -58,8 +49,6 @@ const ALL_WORDS_EN = [
   'could','color','clear','count','court','coast','clock',
   'voice','value','visit','drive','brave','alive','stove',
   'dream','steam','storm','cream','bloom','claim','gleam',
-  'might','month','model','music','magic','basic','topic',
-  // 5–6 letter common words
   'which','about','would','there','their','small','large',
   'where','after','think','again','while','those','right',
   'every','found','still','since','never','quite','often',
@@ -67,30 +56,24 @@ const ALL_WORDS_EN = [
   'being','early','three','force','north','south','earth',
   'heart','learn','share','until','trust','cross','field',
   'event','score','stage','smart','speak','upper','usual',
-  'whole','works','given','these','those','taken','among',
-  'bring','carry','start','close','begin','reach','build',
-  'serve','above','below','front','worth','since','death',
-  'focus','grant','input','local','major','minor','moral',
-  'novel','order','other','paint','press','prime','proof',
-  'proud','queen','quite','quote','radio','raise','range',
-  'rapid','ratio','reach','react','ready','refer','reply',
-  'river','robot','rough','royal','scale','scene','scope',
-  'serve','share','sharp','shift','shore','short','shout',
-  'skill','sleep','slide','slope','smile','solve','space',
-  'spare','spend','spoke','spoon','sport','staff','stake',
-  'stand','stark','start','state','stays','steam','steel',
-  'steep','steer','stern','stick','stiff','still','stock',
-  'stone','stood','store','storm','story','stove','straw',
-  'stress','strip','stuck','study','stuff','style','super',
-  'surge','swear','sweet','swept','swift','swing','sword',
-  'taken','teach','tense','thick','those','throw','tired',
-  'title','today','token','touch','tough','tower','towns',
-  'track','trade','trail','train','trans','treat','trend',
-  'tribe','tried','troop','truck','truly','trust','truth',
-  'tumor','ultra','under','unity','until','upper','urban',
-  'usage','usual','utter','valid','value','vault','video',
-  'viral','vital','vivid','voter','wagon','watch','waste',
-  // 6+ letters
+  'whole','works','given','these','taken','among','bring',
+  'carry','start','close','begin','reach','focus','grant',
+  'input','local','major','minor','moral','novel','order',
+  'other','paint','press','prime','proof','proud','quite',
+  'radio','raise','range','rapid','ratio','reach','react',
+  'ready','refer','reply','river','robot','rough','royal',
+  'scale','scene','scope','serve','share','sharp','shift',
+  'shore','shout','skill','sleep','slide','slope','smile',
+  'solve','space','spare','spend','sport','staff','stake',
+  'stark','stays','steam','steel','steep','steer','stern',
+  'stick','stiff','stock','stood','storm','story','straw',
+  'strip','stuck','stuff','super','surge','swear','sweet',
+  'swept','swing','sword','teach','tense','thick','tired',
+  'today','token','touch','tough','tower','towns','trade',
+  'trans','treat','trend','tribe','tried','troop','truck',
+  'truly','truth','tumor','ultra','unity','urban','usage',
+  'utter','valid','vault','video','viral','vital','voter',
+  'wagon','watch','waste',
   'talent','rental','entail','retail','tinsel','antler',
   'listen','silent','enlist','stolen','lonely','nation',
   'garden','hidden','golden','burden','wooden','warden',
@@ -99,20 +82,18 @@ const ALL_WORDS_EN = [
   'mother','father','strong','street','breath','spread',
   'nature','future','number','winter','system','spring',
   'center','mental','dental','gentle','travel','silver',
-  'driver','river','better','letter','corner','border',
-  'target','market','basket','battle','castle','handle',
-  'inside','island','itself','joined','jungle','kicked',
-  'launch','leader','letter','lights','linked','listen',
-  'looked','lovely','making','market','master','matter',
-  'member','mental','method','middle','minute','mirror',
-  'mobile','modern','moment','motion','muscle','mutual',
-  'nearby','needed','normal','notice','object','online',
-  'opened','option','output','owners','palace','parent',
-  'passed','people','period','placed','player','pocket',
-  'police','portal','posted','pretty','proven','public',
-  'pulled','pushed','raised','rather','reason','record',
-  'remain','report','result','return','review','rights',
-  'rising','robust','broken',
+  'driver','better','letter','corner','border','target',
+  'market','basket','battle','castle','handle','candle',
+  'inside','island','itself','launch','leader','lights',
+  'looked','lovely','making','master','matter','member',
+  'method','middle','minute','mirror','mobile','modern',
+  'moment','motion','muscle','mutual','nearby','needed',
+  'normal','notice','object','online','opened','option',
+  'output','palace','parent','passed','period','placed',
+  'player','pocket','police','portal','posted','pretty',
+  'proven','public','pulled','pushed','raised','rather',
+  'reason','record','remain','report','result','return',
+  'review','rights','rising','robust','broken',
 ];
 
 const ALL_WORDS_UZ = [
@@ -159,73 +140,129 @@ export default function App() {
   const [justUnlocked, setJustUnlocked] = useState(false);
   const [words, setWords] = useState(() => genWords(UNLOCK_ORDER.slice(0, INIT), 'en'));
   const [wordIndex, setWordIndex] = useState(0);
-  const [currentInput, setCurrentInput] = useState('');
-  const [wordResults, setWordResults] = useState([]);
+
+  // New typing state — cursor + per-char errors
+  const [charIndex, setCharIndex] = useState(0);
+  const [charHasError, setCharHasError] = useState(new Set());
+  const [wordErrors, setWordErrors] = useState([]); // bool[] per completed word
+
   const [activeKey, setActiveKey] = useState('');
   const [started, setStarted] = useState(false);
   const [time, setTime] = useState(0);
   const [finished, setFinished] = useState(false);
-  const [lessonCount, setLessonCount] = useState(0);
   const [streak, setStreak] = useState(0);
+
+  // Per-letter stats { attempts, errors }
+  const [letterStats, setLetterStats] = useState(() =>
+    Object.fromEntries(UNLOCK_ORDER.map(l => [l, { attempts: 0, errors: 0 }]))
+  );
+
+  // Previous lesson metrics for trend arrows
+  const [prevMetrics, setPrevMetrics] = useState({ wpm: 0, accuracy: 100, score: 0 });
+
+  // Daily time (persisted to localStorage)
+  const [dailyTime, setDailyTime] = useState(() => {
+    try {
+      const today = new Date().toDateString();
+      const saved = JSON.parse(localStorage.getItem('typeflow-daily') || '{}');
+      return saved.date === today ? (saved.time || 0) : 0;
+    } catch { return 0; }
+  });
 
   const unlockedLetters = UNLOCK_ORDER.slice(0, unlockedCount);
 
   // Timer
   useEffect(() => {
     if (!started || finished) return;
-    const id = setInterval(() => setTime(t => t + 1), 1000);
+    const id = setInterval(() => {
+      setTime(t => t + 1);
+      setDailyTime(d => {
+        const nd = d + 1;
+        try {
+          localStorage.setItem('typeflow-daily', JSON.stringify({
+            date: new Date().toDateString(), time: nd,
+          }));
+        } catch {}
+        return nd;
+      });
+    }, 1000);
     return () => clearInterval(id);
   }, [started, finished]);
 
-  // Stats
-  const totalTyped = wordResults.reduce((s, w) => s + w.length, 0) + currentInput.length;
-  const totalCorrect = wordResults.reduce((s, w) => s + w.filter(Boolean).length, 0);
-  const wpm = time > 0 ? Math.round((totalCorrect / 5) / (time / 60)) : 0;
-  const accuracy = totalTyped > 0 ? Math.round((totalCorrect / totalTyped) * 100) : 100;
-  const score = Math.round(wpm * (accuracy / 100) * 10);
+  // ── Live stats ────────────────────────────────────────────
+  const completedCorrect = wordErrors.reduce((s, w) => s + w.filter(Boolean).length, 0);
+  const completedTotal   = wordErrors.reduce((s, w) => s + w.length, 0);
+  const currentErrors    = [...charHasError].filter(i => i < charIndex).length;
+  const totalCorrect     = completedCorrect + (charIndex - currentErrors);
+  const totalTyped       = completedTotal + charIndex;
+  const wpm      = time > 0 ? Math.round((totalCorrect / 5) / (time / 60) * 10) / 10 : 0;
+  const accuracy = totalTyped > 0 ? Math.round((totalCorrect / totalTyped) * 10000) / 100 : 100;
+  const score    = Math.round(wpm * (accuracy / 100) * 10);
 
+  // Current expected character
+  const currentWord = !finished && words[wordIndex] ? words[wordIndex] : null;
+  const currentChar = currentWord ? (currentWord[charIndex] ?? null) : null;
+
+  // ── Key handler ────────────────────────────────────────────
   const handleKey = useCallback((e) => {
     // Tab = restart
     if (e.key === 'Tab') {
       e.preventDefault();
       setWords(genWords(UNLOCK_ORDER.slice(0, unlockedCount), lang));
-      setWordIndex(0); setCurrentInput(''); setWordResults([]);
+      setWordIndex(0); setCharIndex(0); setCharHasError(new Set()); setWordErrors([]);
       setStarted(false); setTime(0); setFinished(false); setJustUnlocked(false);
       return;
     }
 
-    // Highlight key
+    // Highlight pressed key on keyboard visual
     setActiveKey(e.key);
     setTimeout(() => setActiveKey(''), 150);
 
     if (finished) return;
     if (!started && e.key.length === 1) setStarted(true);
 
+    const word = words[wordIndex];
+    const expected = word?.[charIndex];
+
+    // Backspace — go back one position
     if (e.key === 'Backspace') {
-      setCurrentInput(i => i.slice(0, -1));
+      e.preventDefault();
+      if (charIndex > 0) setCharIndex(i => i - 1);
       return;
     }
 
+    // Space — only advances word if word is fully typed
     if (e.key === ' ') {
       e.preventDefault();
-      const word = words[wordIndex];
-      const result = [...word].map((ch, ci) => currentInput[ci] === ch);
-      setWordResults(r => [...r, result]);
-      setCurrentInput('');
+      if (!word || charIndex < word.length) return; // word not done yet — ignore space
+      // Word fully typed — commit and move on
+      const result = [...word].map((_, ci) => !charHasError.has(ci));
+
+      // Compute final lesson stats before resetting
+      const allWordErrors = [...wordErrors, result];
+      const fc = allWordErrors.reduce((s, w) => s + w.filter(Boolean).length, 0);
+      const ft = allWordErrors.reduce((s, w) => s + w.length, 0);
+      const fwpm = time > 0 ? Math.round((fc / 5) / (time / 60) * 10) / 10 : 0;
+      const facc = ft > 0 ? Math.round((fc / ft) * 10000) / 100 : 100;
+      const fscore = Math.round(fwpm * (facc / 100) * 10);
+
+      setWordErrors(r => [...r, result]);
+      setCharIndex(0);
+      setCharHasError(new Set());
 
       const nextIdx = wordIndex + 1;
       if (nextIdx >= words.length) {
-        // Lesson done
+        // Lesson finished
         setFinished(true);
-        setLessonCount(n => n + 1);
-        if (accuracy >= 90) {
-          const newStreak = streak + 1;
-          if (newStreak >= 2 && unlockedCount < UNLOCK_ORDER.length) {
+        setPrevMetrics({ wpm: fwpm, accuracy: facc, score: fscore });
+        if (facc >= 90) {
+          const ns = streak + 1;
+          if (ns >= 2 && unlockedCount < UNLOCK_ORDER.length) {
             setUnlockedCount(c => c + 1);
             setStreak(0);
             setJustUnlocked(true);
           } else {
-            setStreak(newStreak);
+            setStreak(ns);
             setJustUnlocked(false);
           }
         } else {
@@ -238,12 +275,28 @@ export default function App() {
       return;
     }
 
-    if (e.key.length === 1) setCurrentInput(i => i + e.key);
-  }, [finished, started, words, wordIndex, currentInput, accuracy, streak, unlockedCount, lang]);
+    // Regular character key
+    if (!expected || e.key.length !== 1) return;
+
+    if (e.key === expected) {
+      // ✅ Correct key — advance cursor and record stat
+      const hadError = charHasError.has(charIndex);
+      const ci = charIndex;
+      setLetterStats(prev => {
+        const s = prev[expected] || { attempts: 0, errors: 0 };
+        return { ...prev, [expected]: { attempts: s.attempts + 1, errors: s.errors + (hadError ? 1 : 0) } };
+      });
+      setCharIndex(i => i + 1);
+    } else {
+      // ❌ Wrong key — mark error at current position, DO NOT advance
+      const ci = charIndex;
+      setCharHasError(prev => { const n = new Set(prev); n.add(ci); return n; });
+    }
+  }, [finished, started, words, wordIndex, charIndex, charHasError, wordErrors, wpm, accuracy, score, streak, unlockedCount, lang, time]);
 
   const restart = () => {
     setWords(genWords(unlockedLetters, lang));
-    setWordIndex(0); setCurrentInput(''); setWordResults([]);
+    setWordIndex(0); setCharIndex(0); setCharHasError(new Set()); setWordErrors([]);
     setStarted(false); setTime(0); setFinished(false); setJustUnlocked(false);
   };
 
@@ -251,7 +304,7 @@ export default function App() {
     const nl = lang === 'en' ? 'uz' : 'en';
     setLang(nl);
     setWords(genWords(unlockedLetters, nl));
-    setWordIndex(0); setCurrentInput(''); setWordResults([]);
+    setWordIndex(0); setCharIndex(0); setCharHasError(new Set()); setWordErrors([]);
     setStarted(false); setTime(0); setFinished(false); setJustUnlocked(false);
   };
 
@@ -284,7 +337,6 @@ export default function App() {
             style={{
               background: '#2a2a2a', border: '1px solid #444', borderRadius: 6,
               padding: '6px 14px', color: '#d4d4d4', fontSize: 13, fontWeight: 600,
-              display: 'flex', alignItems: 'center', gap: 6,
             }}
           >
             {lang === 'en' ? '🇺🇿 UZ' : '🇬🇧 EN'}
@@ -293,41 +345,21 @@ export default function App() {
       </header>
 
       {/* ── Main ── */}
-      <main style={{ maxWidth: 980, margin: '0 auto', padding: '36px 32px', width: '100%' }}>
+      <main style={{ maxWidth: 980, margin: '0 auto', padding: '28px 32px', width: '100%' }}>
 
-        {/* Stats */}
-        <Stats wpm={wpm} accuracy={accuracy} time={time} score={score} />
-
-        {/* Letter progress */}
-        <div style={{
-          display: 'flex', gap: 5, marginBottom: 28,
-          justifyContent: 'center', flexWrap: 'wrap',
-        }}>
-          {UNLOCK_ORDER.map((letter, i) => {
-            const unlocked = i < unlockedCount;
-            const isCurrent = i === unlockedCount - 1;
-            return (
-              <div
-                key={letter}
-                title={unlocked ? `"${letter.toUpperCase()}" — unlocked` : `"${letter.toUpperCase()}" — locked`}
-                style={{
-                  width: 30, height: 30, borderRadius: 5,
-                  background: unlocked
-                    ? (isCurrent ? 'rgba(250,204,20,0.12)' : 'rgba(74,222,128,0.08)')
-                    : 'transparent',
-                  border: `1px solid ${isCurrent ? '#facc14' : unlocked ? '#2d5a2d' : '#2a2a2a'}`,
-                  color: unlocked ? (isCurrent ? '#facc14' : '#4ade80') : '#333',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 700, fontSize: 12,
-                  transition: 'all 0.3s',
-                  userSelect: 'none',
-                }}
-              >
-                {letter.toUpperCase()}
-              </div>
-            );
-          })}
-        </div>
+        {/* keybr-style info panel */}
+        <InfoPanel
+          wpm={wpm}
+          accuracy={accuracy}
+          score={score}
+          prevMetrics={prevMetrics}
+          unlockedCount={unlockedCount}
+          letterStats={letterStats}
+          currentChar={currentChar}
+          streak={streak}
+          dailyTime={dailyTime}
+          dailyGoal={DAILY_GOAL_SECS}
+        />
 
         {/* Typing area or finish screen */}
         {finished ? (
@@ -344,8 +376,9 @@ export default function App() {
           <TextDisplay
             words={words}
             wordIndex={wordIndex}
-            currentInput={currentInput}
-            wordResults={wordResults}
+            charIndex={charIndex}
+            charHasError={charHasError}
+            wordErrors={wordErrors}
           />
         )}
 
@@ -368,7 +401,7 @@ function FinishScreen({ wpm, accuracy, score, streak, unlockedCount, justUnlocke
     <div style={{
       background: '#1a1a1a',
       border: `1px solid ${justUnlocked ? '#78350f' : good ? '#14532d' : '#7f1d1d'}`,
-      borderRadius: 12, padding: '40px 48px',
+      borderRadius: 12, padding: '36px 48px',
       textAlign: 'center', marginBottom: 20,
     }}>
       <div style={{ fontSize: 40, marginBottom: 12 }}>
@@ -380,34 +413,30 @@ function FinishScreen({ wpm, accuracy, score, streak, unlockedCount, justUnlocke
           : good ? 'Great work!' : 'Keep practicing!'}
       </h2>
 
-      {/* Result stats */}
       <div style={{ display: 'flex', gap: 36, justifyContent: 'center', marginBottom: 20 }}>
-        <StatItem label="Speed" value={wpm} unit="wpm" color="#569cd6" />
-        <StatItem label="Accuracy" value={accuracy} unit="%" color={good ? '#4ade80' : '#f87171'} />
-        <StatItem label="Score" value={score} unit="pts" color="#c084fc" />
+        <StatItem label="Speed"    value={wpm.toFixed(1)}      unit="wpm" color="#569cd6" />
+        <StatItem label="Accuracy" value={accuracy.toFixed(2)} unit="%"   color={good ? '#4ade80' : '#f87171'} />
+        <StatItem label="Score"    value={Math.round(score)}   unit="pts" color="#c084fc" />
       </div>
 
-      {/* Progress message */}
-      <p style={{ color: '#666', fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>
+      <p style={{ color: '#666', fontSize: 14, marginBottom: 20, lineHeight: 1.7 }}>
         {justUnlocked
-          ? `You can now practice with "${newlyUnlocked}" in your lessons! Next goal: unlock "${nextLetter || '🏆'}".`
+          ? `You can now practice with "${newlyUnlocked}"! Next goal: unlock "${nextLetter || '🏆'}".`
           : good
             ? streak >= 1
               ? `${streak}/2 lessons done! One more with 90%+ accuracy to unlock "${nextLetter || '🏆'}".`
-              : `Complete 2 consecutive lessons with 90%+ accuracy to unlock "${nextLetter || '🏆'}".`
-            : 'Accuracy below 90%. Slow down and focus on correctness — then try again!'
+              : `Complete 2 consecutive lessons at 90%+ accuracy to unlock "${nextLetter || '🏆'}".`
+            : 'Accuracy below 90%. Slow down and focus — correctness over speed!'
         }
       </p>
 
-      {/* Streak indicator */}
       {!justUnlocked && good && (
         <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 20 }}>
           {[0, 1].map(i => (
             <div key={i} style={{
               width: 12, height: 12, borderRadius: '50%',
               background: i < streak ? '#4ade80' : '#2a2a2a',
-              border: '1px solid #3a3a3a',
-              transition: 'background 0.3s',
+              border: '1px solid #3a3a3a', transition: 'background 0.3s',
             }} />
           ))}
           <span style={{ fontSize: 12, color: '#555', marginLeft: 4 }}>streak</span>
@@ -419,7 +448,6 @@ function FinishScreen({ wpm, accuracy, score, streak, unlockedCount, justUnlocke
         style={{
           padding: '12px 40px', background: '#1d4ed8', color: '#fff',
           border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600,
-          letterSpacing: 0.3,
         }}
       >
         Next Lesson →
