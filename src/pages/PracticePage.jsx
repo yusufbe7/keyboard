@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import Keyboard   from '../components/Keyboard';
+import Keyboard    from '../components/Keyboard';
 import TextDisplay from '../components/TextDisplay';
-import InfoPanel  from '../components/InfoPanel';
-import WpmChart   from '../components/WpmChart';
+import WpmChart    from '../components/WpmChart';
 import { UNLOCK_ORDER, DAILY_GOAL_SECS } from '../constants';
 import {
   getLetterStats, saveLetterStats,
@@ -91,21 +90,10 @@ const ALL_WORDS_EN = [
   'center','mental','dental','gentle','travel','silver',
   'driver','better','letter','corner','border','target',
   'market','basket','battle','castle','handle','candle',
-  'inside','island','itself','launch','leader','lights',
-  'looked','lovely','making','master','matter','member',
-  'method','middle','minute','mirror','mobile','modern',
-  'moment','motion','muscle','mutual','nearby','needed',
-  'normal','notice','object','online','opened','option',
-  'output','palace','parent','passed','period','placed',
-  'player','pocket','police','portal','posted','pretty',
-  'proven','public','pulled','pushed','raised','rather',
-  'reason','record','remain','report','result','return',
-  'review','rights','rising','robust','broken',
 ];
 
 const ALL_WORDS_UZ = [
-  'an','in','air','ran','inn',
-  'rain','earn','near','real','liar','rail','liner',
+  'an','in','air','ran','inn','rain','earn','near','real','liar','rail','liner',
   'uy','non','suv','ona','ota','bola','yosh','tosh','bosh',
   'kun','yil','oy','ana','nan','nari','rani',
   'kino','stol','stul','ovoz','obod','atlas',
@@ -113,15 +101,14 @@ const ALL_WORDS_UZ = [
   'ovqat','radio','kalit','shahar','inson',
 ];
 
-// ── Helpers ───────────────────────────────────────────────────
 function getAvailableWords(unlocked, lang) {
   const src = lang === 'en' ? ALL_WORDS_EN : ALL_WORDS_UZ;
   const set = new Set(unlocked);
   return src.filter(w => [...w].every(c => set.has(c)));
 }
-function genWords(unlocked, lang, count = 25) {
+function genWords(unlocked, lang, count = 30) {
   const pool = getAvailableWords(unlocked, lang);
-  const fb = lang === 'en' ? ['an','in','air','ran','rain','earn','near'] : ['ana','nari','uy'];
+  const fb = ['an','in','air','ran','rain','earn','near'];
   const src = pool.length >= 4 ? pool : fb;
   const words = []; let prev = '';
   for (let i = 0; i < count; i++) {
@@ -148,9 +135,8 @@ const MODE_LIMIT = { practice: null, test60: 60, test120: 120 };
 
 // ── Main component ────────────────────────────────────────────
 export default function PracticePage() {
-  // ── Persisted initial state ──
-  const [lang, setLang] = useState('en');
-  const [mode, setMode] = useState('practice');
+  const [lang, setLang]   = useState('en');
+  const [mode, setMode]   = useState('practice');
   const [soundOn, setSoundOn] = useState(() => {
     try { return localStorage.getItem('typeflow-sound') !== 'false'; } catch { return true; }
   });
@@ -158,7 +144,6 @@ export default function PracticePage() {
   const [letterStats,   setLetterStats]   = useState(() => getLetterStats(UNLOCK_ORDER));
   const [dailyTime,     setDailyTime]     = useState(() => getDailyTime());
 
-  // ── Typing state ──
   const [words,        setWords]        = useState(() => genWords(UNLOCK_ORDER.slice(0,5),'en'));
   const [wordIndex,    setWordIndex]    = useState(0);
   const [charIndex,    setCharIndex]    = useState(0);
@@ -176,7 +161,6 @@ export default function PracticePage() {
   const [capsLock,     setCapsLock]     = useState(false);
   const [spaceError,   setSpaceError]   = useState(false);
 
-  // ── Refs ──
   const audioRef       = useRef(null);
   const wpmRef         = useRef(0);
   const tickRef        = useRef(0);
@@ -184,12 +168,10 @@ export default function PracticePage() {
 
   const unlockedLetters = UNLOCK_ORDER.slice(0, unlockedCount);
 
-  // ── Persist settings ──
   useEffect(() => { saveLetterStats(letterStats); }, [letterStats]);
   useEffect(() => { saveUnlockedCount(unlockedCount); }, [unlockedCount]);
   useEffect(() => { try { localStorage.setItem('typeflow-sound',''+soundOn); } catch {} }, [soundOn]);
 
-  // ── CapsLock detection ──
   useEffect(() => {
     const h = (e) => setCapsLock(!!e.getModifierState?.('CapsLock'));
     window.addEventListener('keydown', h);
@@ -197,7 +179,6 @@ export default function PracticePage() {
     return () => { window.removeEventListener('keydown',h); window.removeEventListener('keyup',h); };
   }, []);
 
-  // ── Timer ──
   useEffect(() => {
     if (!started || finished) return;
     tickRef.current = 0;
@@ -210,7 +191,6 @@ export default function PracticePage() {
     return () => clearInterval(id);
   }, [started, finished]);
 
-  // ── Auto-finish for test modes ──
   useEffect(() => {
     const limit = MODE_LIMIT[mode];
     if (!limit || !started || finished) return;
@@ -218,7 +198,6 @@ export default function PracticePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [time, mode, started, finished]);
 
-  // ── Live stats ──
   const completedCorrect = wordErrors.reduce((s,w)=>s+w.filter(Boolean).length,0);
   const completedTotal   = wordErrors.reduce((s,w)=>s+w.length,0);
   const curErrors        = [...charHasError].filter(i=>i<charIndex).length;
@@ -233,8 +212,9 @@ export default function PracticePage() {
   const currentChar = currentWord ? (currentWord[charIndex] ?? null) : null;
   const timeLimit   = MODE_LIMIT[mode];
   const timeLeft    = timeLimit ? Math.max(0, timeLimit - time) : null;
+  const isTest      = mode !== 'practice';
+  const spaceWaiting = !finished && !!currentWord && charIndex >= currentWord.length;
 
-  // ── Sound ──
   function playSound(correct) {
     if (!soundOn) return;
     try {
@@ -251,7 +231,6 @@ export default function PracticePage() {
     } catch {}
   }
 
-  // ── Finish lesson ──
   function finishLesson(extraWordResult) {
     const allWE = extraWordResult ? [...wordErrors, extraWordResult] : wordErrors;
     const fc = allWE.reduce((s,w)=>s+w.filter(Boolean).length,0);
@@ -259,36 +238,28 @@ export default function PracticePage() {
     const fwpm = time>0 ? Math.round((fc/5)/(time/60)*10)/10 : 0;
     const facc = ft>0 ? Math.round((fc/ft)*10000)/100 : 100;
     const fsco = Math.round(fwpm*(facc/100)*10);
-
     setFinished(true);
     setPrevMetrics({ wpm: fwpm, accuracy: facc, score: fsco });
     recordLesson({ mode, wpm: fwpm, accuracy: facc, timeSecs: time });
-
     if (mode === 'practice') {
       if (facc >= 90) {
         const ns = streak + 1;
         if (ns >= 2 && unlockedCount < UNLOCK_ORDER.length) {
           const newLetter = UNLOCK_ORDER[unlockedCount];
           setUnlockedCount(c => c+1);
-          setStreak(0);
-          setJustUnlocked(true);
-          setRecentlyUnlocked(newLetter);
+          setStreak(0); setJustUnlocked(true); setRecentlyUnlocked(newLetter);
           setTimeout(() => setRecentlyUnlocked(null), 3000);
         } else { setStreak(ns); setJustUnlocked(false); }
       } else { setStreak(0); setJustUnlocked(false); }
     }
   }
 
-  // ── Key handler ──
   const handleKey = useCallback((e) => {
-    if (e.key === 'Tab') {
-      e.preventDefault(); doRestart(); return;
-    }
+    if (e.key === 'Tab') { e.preventDefault(); doRestart(); return; }
     setActiveKey(e.key);
     setTimeout(() => setActiveKey(''), 150);
     if (finished) return;
 
-    // Track test start
     if (!started && e.key.length === 1) {
       setStarted(true);
       if (!testStartedRef.current) { testStartedRef.current = true; recordTestStart(); }
@@ -312,7 +283,6 @@ export default function PracticePage() {
       return;
     }
 
-    // Word complete but user pressed a non-space key — error, must press space
     if (word && charIndex >= word.length && e.key.length === 1) {
       playSound(false);
       setSpaceError(true);
@@ -324,8 +294,7 @@ export default function PracticePage() {
     if (e.key === expected) {
       playSound(true);
       const hadErr = charHasError.has(charIndex);
-      const exp    = expected;
-      const ci     = charIndex;
+      const exp = expected;
       setLetterStats(prev => {
         const s = prev[exp] || { attempts:0, errors:0 };
         return { ...prev, [exp]: { attempts: s.attempts+1, errors: s.errors+(hadErr?1:0) } };
@@ -349,107 +318,79 @@ export default function PracticePage() {
   function switchMode(m)  { setMode(m);  doRestart(m, lang); }
   function switchLang()   { const nl=lang==='en'?'uz':'en'; setLang(nl); doRestart(mode, nl); }
 
-  // ── Render ────────────────────────────────────────────────
   return (
-    <div onKeyDown={handleKey} tabIndex={0} autoFocus style={{ outline:'none' }}>
-
-      {/* Sub-toolbar */}
+    <div
+      onKeyDown={handleKey} tabIndex={0} autoFocus
+      style={{ outline:'none', minHeight:'calc(100vh - 52px)', display:'flex', flexDirection:'column', alignItems:'center' }}
+    >
+      {/* ── Toolbar ── */}
       <div style={{
-        display:'flex', alignItems:'center', justifyContent:'space-between',
-        padding:'8px 48px', borderBottom:'1px solid #1e1e1e', background:'#161616',
-        flexWrap:'wrap', gap:8,
+        display:'flex', alignItems:'center', gap:6,
+        marginTop: 40, marginBottom: 32,
+        color:'var(--sub)', fontSize:13,
+        flexWrap:'wrap', justifyContent:'center',
       }}>
-        {/* Mode buttons */}
-        <div style={{ display:'flex', gap:4 }}>
-          {[['practice','Practice'],['test60','1 min'],['test120','2 min']].map(([m,label])=>(
-            <button key={m} onClick={()=>switchMode(m)} style={{
-              padding:'5px 14px', borderRadius:6, border:'none', cursor:'pointer',
-              fontSize:12, fontWeight:600,
-              background: mode===m ? '#569cd6' : '#252525',
-              color:       mode===m ? '#fff'    : '#666',
-            }}>{label}</button>
-          ))}
-        </div>
-        {/* Right controls */}
-        <div className="kb-header-right" style={{ display:'flex', alignItems:'center', gap:12 }}>
-          {timeLeft !== null && (
-            <span style={{ fontSize:14, fontWeight:700, color: timeLeft<=10?'#f87171':'#fbbf24' }}>
-              {Math.floor(timeLeft/60)}:{String(timeLeft%60).padStart(2,'0')}
-            </span>
-          )}
-          <button onClick={()=>setSoundOn(v=>!v)} style={{
-            background:'none', border:'none', fontSize:16, cursor:'pointer', color:'#666',
-            padding:'4px',
-          }}>{soundOn ? '🔊' : '🔇'}</button>
-          <button onClick={switchLang} style={{
-            background:'#252525', border:'1px solid #333', borderRadius:6,
-            padding:'4px 10px', color:'#aaa', fontSize:12, fontWeight:600,
-          }}>{lang==='en'?'🇺🇿 UZ':'🇬🇧 EN'}</button>
-          <span style={{ fontSize:11, color:'#444' }}>
-            <kbd style={{ background:'#252525', border:'1px solid #333', borderRadius:3, padding:'1px 5px', color:'#666', fontFamily:'monospace' }}>Tab</kbd>
-            {' '}restart
-          </span>
-        </div>
+        {/* Mode pills */}
+        {[['practice','practice'],['test60','1 min'],['test120','2 min']].map(([m,label])=>(
+          <button key={m} onClick={()=>switchMode(m)} style={{
+            background:'none', border:'none', padding:'4px 10px',
+            borderRadius:6, fontSize:13, cursor:'pointer',
+            color: mode===m ? 'var(--accent)' : 'var(--sub)',
+            fontWeight: mode===m ? 700 : 400,
+          }}>{label}</button>
+        ))}
+
+        <span style={{ width:1, height:16, background:'var(--sub-alt)', margin:'0 4px' }} />
+
+        {/* Sound */}
+        <button onClick={()=>setSoundOn(v=>!v)} style={{
+          background:'none', border:'none', fontSize:14, cursor:'pointer',
+          color: soundOn ? 'var(--sub)' : 'var(--sub-alt)', padding:'4px 6px',
+        }} title="Toggle sound">{soundOn?'♪':'♪̶'}</button>
+
+        {/* Lang */}
+        <button onClick={switchLang} style={{
+          background:'none', border:'none', padding:'4px 8px',
+          color:'var(--sub)', fontSize:12, cursor:'pointer', fontWeight:600,
+        }}>{lang==='en'?'EN':'UZ'}</button>
+
+        <span style={{ width:1, height:16, background:'var(--sub-alt)', margin:'0 4px' }} />
+
+        {/* Tab hint */}
+        <span style={{ fontSize:12, color:'var(--sub-alt)' }}>
+          <kbd style={{ background:'var(--sub-alt)', borderRadius:3, padding:'1px 5px', fontSize:11, color:'var(--sub)' }}>tab</kbd>
+          {' '}restart
+        </span>
       </div>
 
-      <main className="kb-main" style={{ maxWidth:980, margin:'0 auto', padding:'24px 32px', width:'100%' }}>
+      {/* ── Main area ── */}
+      <div style={{ width:'100%', maxWidth:780, padding:'0 32px' }}>
 
-        {/* CapsLock warning */}
         {capsLock && (
-          <div className="kb-caps-warning">
-            ⚠️ Caps Lock is on! Turn it off to type correctly.
+          <div className="kb-caps-warning" style={{ marginBottom:16 }}>
+            ⚠️ Caps Lock is on!
           </div>
         )}
 
-        {/* Info panel */}
-        <InfoPanel
-          wpm={wpm} accuracy={accuracy} score={score}
-          prevMetrics={prevMetrics}
-          unlockedCount={unlockedCount}
-          letterStats={letterStats}
-          currentChar={currentChar}
-          streak={streak}
-          dailyTime={dailyTime}
-          dailyGoal={DAILY_GOAL_SECS}
-          mode={mode}
-          wordIndex={wordIndex}
-          wordCount={words.length}
-          recentlyUnlocked={recentlyUnlocked}
-        />
-
-        {/* Letter progress (practice mode only) */}
-        {mode === 'practice' && (
-          <div style={{ display:'flex', gap:4, marginBottom:20, justifyContent:'center', flexWrap:'wrap' }}>
-            {UNLOCK_ORDER.map((letter, i) => {
-              const unlocked  = i < unlockedCount;
-              const isCurrent = i === unlockedCount - 1;
-              const isNew     = recentlyUnlocked === letter;
-              return (
-                <div key={letter}
-                  className={isNew ? 'kb-unlock-pop' : ''}
-                  title={unlocked ? `"${letter.toUpperCase()}" — unlocked` : `"${letter.toUpperCase()}" — locked`}
-                  style={{
-                    width:30, height:30, borderRadius:5, userSelect:'none',
-                    background: unlocked ? (isCurrent?'rgba(250,204,20,0.12)':'rgba(74,222,128,0.07)') : 'transparent',
-                    border:`1px solid ${isCurrent?'#facc14':unlocked?'#2d5a2d':'#252525'}`,
-                    color: unlocked ? (isCurrent?'#facc14':'#4ade80') : '#2a2a2a',
-                    display:'flex', alignItems:'center', justifyContent:'center',
-                    fontWeight:700, fontSize:12, transition:'all 0.3s',
-                  }}>
-                  {letter.toUpperCase()}
-                </div>
-              );
-            })}
+        {/* Timer — test mode, big */}
+        {isTest && started && !finished && timeLeft !== null && (
+          <div style={{
+            fontSize:44, fontWeight:700, color:'var(--accent)',
+            marginBottom:12, letterSpacing:-1,
+          }}>
+            {Math.floor(timeLeft/60)}:{String(timeLeft%60).padStart(2,'0')}
           </div>
         )}
 
-        {/* Typing area */}
+        {/* Text or results */}
         {finished ? (
           <FinishScreen
-            wpm={wpm} accuracy={accuracy} score={score}
+            wpm={prevMetrics.wpm} accuracy={prevMetrics.accuracy} score={prevMetrics.score}
             streak={streak} unlockedCount={unlockedCount}
             justUnlocked={justUnlocked} mode={mode}
             wpmHistory={wpmHistory}
+            letterStats={letterStats}
+            recentlyUnlocked={recentlyUnlocked}
             onRestart={()=>doRestart()}
           />
         ) : (
@@ -460,88 +401,130 @@ export default function PracticePage() {
           />
         )}
 
-        {/* Keyboard */}
-        <div style={{ display:'flex', justifyContent:'center', marginTop:16 }}>
+        {/* Sub-hint row */}
+        {!finished && (
+          <div style={{
+            display:'flex', alignItems:'center', justifyContent:'space-between',
+            marginTop:16, color:'var(--sub-alt)', fontSize:12,
+          }}>
+            <span>
+              {mode==='practice'
+                ? `${wordIndex} / ${words.length} words`
+                : isTest && !started ? 'start typing…' : ''}
+            </span>
+            {/* Letter unlock mini-bar (practice) */}
+            {mode === 'practice' && (
+              <div style={{ display:'flex', gap:3 }}>
+                {UNLOCK_ORDER.map((letter, i) => {
+                  const unlocked  = i < unlockedCount;
+                  const isCurrent = i === unlockedCount - 1;
+                  const isNew     = recentlyUnlocked === letter;
+                  return (
+                    <div key={letter}
+                      className={isNew ? 'kb-unlock-pop' : ''}
+                      title={`${letter.toUpperCase()} — ${unlocked?'unlocked':'locked'}`}
+                      style={{
+                        width: 20, height: 20, borderRadius: 4,
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                        fontSize: 9, fontWeight: 700,
+                        background: unlocked
+                          ? (isCurrent ? 'rgba(226,183,20,0.15)' : 'rgba(209,208,197,0.07)')
+                          : 'transparent',
+                        border: `1px solid ${isCurrent ? 'var(--accent)' : unlocked ? '#444' : '#2a2a2a'}`,
+                        color: unlocked ? (isCurrent ? 'var(--accent)' : 'var(--sub)') : '#2a2a2a',
+                        transition:'all 0.3s',
+                      }}>
+                      {letter.toUpperCase()}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Keyboard ── */}
+      {!finished && (
+        <div style={{ marginTop:48, marginBottom:32 }}>
           <Keyboard
             activeKey={activeKey}
             nextKey={currentChar || ''}
-            spaceWaiting={!finished && !!currentWord && charIndex >= currentWord.length}
+            spaceWaiting={spaceWaiting}
             spaceError={spaceError}
           />
         </div>
-      </main>
+      )}
     </div>
   );
 }
 
 // ── Finish Screen ─────────────────────────────────────────────
-function FinishScreen({ wpm, accuracy, score, streak, unlockedCount, justUnlocked, mode, wpmHistory, onRestart }) {
+function FinishScreen({ wpm, accuracy, score, streak, unlockedCount, justUnlocked, mode, wpmHistory, letterStats, recentlyUnlocked, onRestart }) {
   const good          = accuracy >= 90;
   const newlyUnlocked = justUnlocked ? UNLOCK_ORDER[unlockedCount-1]?.toUpperCase() : null;
   const nextLetter    = UNLOCK_ORDER[unlockedCount]?.toUpperCase();
 
   return (
-    <div style={{
-      background:'#1a1a1a',
-      border:`1px solid ${justUnlocked?'#78350f':good?'#14532d':'#7f1d1d'}`,
-      borderRadius:12, padding:'32px 40px', textAlign:'center', marginBottom:16,
-    }}>
-      <div style={{ fontSize:36, marginBottom:10 }}>
-        {justUnlocked?'🔓':good?'✅':'⚠️'}
-      </div>
-      <h2 style={{ marginBottom:16, fontSize:20, color:'#e0e0e0' }}>
-        {justUnlocked ? `New letter unlocked: "${newlyUnlocked}"!`
-          : good ? 'Great work!' : 'Keep practicing!'}
-      </h2>
-
-      <div style={{ display:'flex', gap:28, justifyContent:'center', marginBottom:16 }}>
-        <StatItem label="Speed"    value={wpm.toFixed(1)}      unit="wpm" color="#569cd6" />
-        <StatItem label="Accuracy" value={accuracy.toFixed(2)} unit="%"   color={good?'#4ade80':'#f87171'} />
-        <StatItem label="Score"    value={Math.round(score)}   unit="pts" color="#c084fc" />
+    <div style={{ textAlign:'center' }}>
+      {/* Big stats */}
+      <div style={{ display:'flex', gap:48, justifyContent:'center', marginBottom:8, flexWrap:'wrap' }}>
+        <BigStat label="wpm"      value={wpm.toFixed(0)}       color="var(--accent)" />
+        <BigStat label="accuracy" value={accuracy.toFixed(1)+'%'} color="var(--main)"   />
+        <BigStat label="score"    value={Math.round(score)+'pts'} color="var(--sub)"    />
       </div>
 
-      {wpmHistory.length >= 2 && <WpmChart data={wpmHistory} />}
-
-      {mode === 'practice' && !justUnlocked && (
-        <>
-          <p style={{ color:'#666', fontSize:13, marginTop:12, marginBottom:12, lineHeight:1.7 }}>
-            {good
-              ? streak>=1 ? `${streak}/2 lessons done! One more to unlock "${nextLetter||'🏆'}".`
-                          : `Complete 2 lessons at 90%+ accuracy to unlock "${nextLetter||'🏆'}".`
-              : 'Accuracy below 90%. Slow down and focus on correctness!'}
-          </p>
-          {good && (
-            <div style={{ display:'flex', gap:8, justifyContent:'center', marginBottom:12 }}>
-              {[0,1].map(i=>(
-                <div key={i} style={{
-                  width:10,height:10,borderRadius:'50%',
-                  background:i<streak?'#4ade80':'#252525',
-                  border:'1px solid #333',
-                }}/>
-              ))}
-              <span style={{ fontSize:11, color:'#555', marginLeft:4 }}>streak</span>
-            </div>
-          )}
-        </>
+      {/* WPM Chart */}
+      {wpmHistory.length >= 2 && (
+        <div style={{ marginBottom:24 }}>
+          <div style={{ fontSize:11, color:'var(--sub)', marginBottom:6, textTransform:'uppercase', letterSpacing:1.5 }}>
+            speed over time
+          </div>
+          <WpmChart data={wpmHistory} />
+        </div>
       )}
 
+      {/* Unlock / streak info */}
+      {mode === 'practice' && (
+        <div style={{ color:'var(--sub)', fontSize:13, marginBottom:24, lineHeight:1.8 }}>
+          {justUnlocked
+            ? <span style={{ color:'var(--accent)', fontWeight:600 }}>🔓 New letter unlocked: "{newlyUnlocked}"!</span>
+            : good
+              ? streak >= 1
+                ? `${streak}/2 lessons done — one more to unlock "${nextLetter||'🏆'}"`
+                : `Complete 2 lessons ≥90% to unlock "${nextLetter||'🏆'}"`
+              : <span style={{ color:'var(--error)' }}>Accuracy below 90% — slow down and focus</span>
+          }
+          {good && !justUnlocked && (
+            <div style={{ display:'flex', gap:6, justifyContent:'center', marginTop:10 }}>
+              {[0,1].map(i=>(
+                <div key={i} style={{
+                  width:8,height:8,borderRadius:'50%',
+                  background: i<streak ? 'var(--accent)' : 'var(--sub-alt)',
+                }}/>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Restart button */}
       <button onClick={onRestart} style={{
-        marginTop:8, padding:'11px 36px', background:'#1d4ed8', color:'#fff',
+        padding:'10px 40px', background:'var(--sub-alt)', color:'var(--main)',
         border:'none', borderRadius:8, fontSize:14, fontWeight:600,
+        cursor:'pointer', letterSpacing:0.5,
       }}>
-        {mode==='practice' ? 'Next Lesson →' : 'Play Again →'}
+        {mode==='practice' ? 'next lesson' : 'play again'}
       </button>
     </div>
   );
 }
 
-function StatItem({ label, value, unit, color }) {
+function BigStat({ label, value, color }) {
   return (
     <div style={{ textAlign:'center' }}>
-      <div style={{ fontSize:10, color:'#555', marginBottom:3, textTransform:'uppercase', letterSpacing:1.2 }}>{label}</div>
-      <div style={{ fontSize:28, fontWeight:700, color }}>
-        {value}<span style={{ fontSize:12, fontWeight:400, color:'#444', marginLeft:2 }}>{unit}</span>
-      </div>
+      <div style={{ fontSize:11, color:'var(--sub)', textTransform:'lowercase', letterSpacing:1.5, marginBottom:4 }}>{label}</div>
+      <div style={{ fontSize:52, fontWeight:700, color, lineHeight:1 }}>{value}</div>
     </div>
   );
 }

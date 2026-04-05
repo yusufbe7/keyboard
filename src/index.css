@@ -7,67 +7,64 @@
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --bg:       #323437;
+  --bg2:      #2c2e31;
+  --main:     #d1d0c5;
+  --sub:      #646669;
+  --sub-alt:  #3a3c3f;
+  --accent:   #e2b714;
+  --error:    #ca4754;
+  --correct:  #d1d0c5;
 }
 
-body { margin: 0; background: #1e1e1e; color: #d4d4d4; }
+body { margin: 0; background: var(--bg); color: var(--main); }
 #root { min-height: 100vh; display: flex; flex-direction: column; }
-h1, h2, h3 { color: #e0e0e0; font-weight: 600; margin: 0; }
+h1, h2, h3 { color: var(--main); font-weight: 600; margin: 0; }
 p { margin: 0; }
-button { font-family: inherit; cursor: pointer; transition: opacity 0.15s; }
-button:hover { opacity: 0.88; }
+button { font-family: inherit; cursor: pointer; transition: color 0.15s, opacity 0.15s; }
 kbd { font-family: 'Consolas', 'Courier New', monospace; }
 
-/* ── Cursor blink ───────────────────────────────────────────── */
-@keyframes kb-blink {
-  0%, 55%  { opacity: 1; }
-  56%, 100% { opacity: 0; }
+/* ── Caret blink ─────────────────────────────────────────────── */
+@keyframes kb-caret-blink {
+  0%, 55%  { border-color: var(--accent); }
+  56%, 100% { border-color: transparent; }
+}
+@keyframes kb-caret-blink-error {
+  0%, 55%  { border-color: var(--error); }
+  56%, 100% { border-color: transparent; }
 }
 
-@keyframes kb-blink-error {
-  0%, 55%  { background: rgba(248, 113, 113, 0.30); outline-color: #f87171; }
-  56%, 100% { background: rgba(248, 113, 113, 0.08); outline-color: transparent; }
+.kb-caret {
+  border-left: 2px solid var(--accent);
+  animation: kb-caret-blink 1s step-end infinite;
+}
+.kb-caret-error {
+  border-left: 2px solid var(--error);
+  animation: kb-caret-blink-error 0.5s step-end infinite;
 }
 
-.kb-cursor {
-  animation: kb-blink 1s step-end infinite;
-}
-
-.kb-cursor-error {
-  animation: kb-blink-error 0.5s step-end infinite;
-}
-
-/* ── New letter unlock pop ──────────────────────────────────── */
+/* ── Unlock pop ──────────────────────────────────────────────── */
 @keyframes kb-unlock-pop {
   0%   { transform: scale(1);   box-shadow: none; }
-  40%  { transform: scale(1.6); box-shadow: 0 0 20px rgba(250, 204, 20, 0.9); }
-  100% { transform: scale(1);   box-shadow: 0 0 6px  rgba(250, 204, 20, 0.25); }
+  40%  { transform: scale(1.6); box-shadow: 0 0 20px rgba(226,183,20,0.9); }
+  100% { transform: scale(1);   box-shadow: 0 0 6px rgba(226,183,20,0.25); }
 }
 .kb-unlock-pop { animation: kb-unlock-pop 0.55s ease forwards; }
 
-/* ── CapsLock warning ───────────────────────────────────────── */
+/* ── CapsLock warning ────────────────────────────────────────── */
 .kb-caps-warning {
-  background: #92400e;
-  border: 1px solid #f59e0b;
-  color: #fef3c7;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  animation: kb-blink 1.2s step-end infinite;
+  background: #92400e; border: 1px solid #f59e0b; color: #fef3c7;
+  border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 500;
+  display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
 }
 
-/* ── Space bar waiting animation ───────────────────────────── */
+/* ── Space bar waiting animation ────────────────────────────── */
 @keyframes kb-space-pulse {
   0%, 100% { box-shadow: 0 2px 0 rgba(80,40,100,0.25), 0 0 8px  rgba(148,112,168,0.35); }
   50%       { box-shadow: 0 2px 0 rgba(80,40,100,0.35), 0 0 22px rgba(148,112,168,0.70); }
 }
-.kb-space-waiting {
-  animation: kb-space-pulse 1s ease-in-out infinite;
-}
+.kb-space-waiting { animation: kb-space-pulse 1s ease-in-out infinite; }
 
 /* ── Mobile ─────────────────────────────────────────────────── */
 @media (max-width: 860px) {
@@ -75,14 +72,5 @@ kbd { font-family: 'Consolas', 'Courier New', monospace; }
 }
 @media (max-width: 600px) {
   .kb-keyboard-wrap { display: none; }
-  .kb-header        { padding: 0 14px !important; }
   .kb-main          { padding: 16px 12px !important; }
-  .kb-text-display  { font-size: 18px !important; line-height: 2.2 !important; }
-  .kb-panel-label   { min-width: 80px !important; font-size: 10px !important; }
-  .kb-allkeys-row   { display: none; }
-  .kb-mode-label    { display: none; }
-  .kb-header-right  { gap: 8px !important; }
-}
-@media (max-width: 400px) {
-  .kb-text-display  { font-size: 16px !important; }
 }
