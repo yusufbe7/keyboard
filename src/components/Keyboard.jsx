@@ -1,56 +1,42 @@
-const FINGER_MAP = {
-  pinky_l:  ['`','1','q','a','z'],
-  ring_l:   ['2','w','s','x'],
-  middle_l: ['3','e','d','c'],
-  index_l:  ['4','5','r','t','f','g','v','b'],
-  index_r:  ['6','7','y','u','h','j','n','m'],
-  middle_r: ['8','i','k',','],
-  ring_r:   ['9','o','l','.'],
-  pinky_r:  ['0','-','=','p','[',']','\\',';',"'",'/',],
-  thumbs:   [' '],
-};
-
-// Dark-mode per-finger tint colors
-const FINGER_COLORS = {
-  pinky_l:  '#3a1f1f', ring_l:  '#2e2a16', middle_l: '#1c2e16',
-  index_l:  '#162030', thumbs:  '#2a2a2a', index_r:  '#1e1c38',
-  middle_r: '#122a22', ring_r:  '#2e1626', pinky_r:  '#321f14',
-};
-
+// ── Simplified keyboard: letter rows + space only ─────────────
 const ROWS = [
-  ['`','1','2','3','4','5','6','7','8','9','0','-','=','⌫'],
-  ['Tab','q','w','e','r','t','y','u','i','o','p','[',']','\\'],
-  ['Caps','a','s','d','f','g','h','j','k','l',';',"'",'↵'],
-  ['⇧','z','x','c','v','b','n','m',',','.','/','⇧'],
-  ['Ctrl','Alt',' ','Alt','Ctrl'],
+  ['q','w','e','r','t','y','u','i','o','p','[',']'],
+  ['a','s','d','f','g','h','j','k','l',';',"'"],
+  ['z','x','c','v','b','n','m',',','.','/'],
 ];
-
-const LABEL_KEY = {
-  '⌫':'backspace','↵':'enter','⇧':'shift',
-  'Tab':'tab','Caps':'capslock','Ctrl':'control','Alt':'alt',
-};
 
 const HOME_KEYS = new Set(['f','j']);
 
-function rk(label) { return LABEL_KEY[label] ?? label.toLowerCase(); }
-
-function fingerColor(key) {
-  const k = key.toLowerCase();
-  for (const [f, keys] of Object.entries(FINGER_MAP)) {
-    if (keys.includes(k)) return FINGER_COLORS[f];
-  }
-  return '#252525';
-}
-
 function keyWidth(label) {
-  if (label === ' ')   return 260;
-  if (['⌫','Tab','Caps','↵'].includes(label)) return 68;
-  if (label === '⇧')   return 88;
-  if (['Ctrl','Alt'].includes(label)) return 52;
-  return 38;
+  if (label === ' ') return 240;
+  return 40;
 }
 
-export default function Keyboard({ activeKey = '', nextKey = '' }) {
+// Purple/lavender palette
+const THEME = {
+  containerBg: '#cbbdd4',
+  keyBg:       '#c0b0ca',
+  keyBorder:   '#b0a0ba',
+  keyText:     '#7a6888',
+  // active (pressed)
+  activeBg:    '#5c3370',
+  activeBorder:'#4a2558',
+  activeText:  '#f0e8f8',
+  // next expected key
+  nextBg:      '#a890b8',
+  nextBorder:  '#9070a8',
+  nextText:    '#f5eeff',
+  // space waiting (word complete)
+  spaceBg:     '#9470a8',
+  spaceBorder: '#7a58a0',
+  spaceText:   '#f0e8ff',
+  // space error
+  spaceErrBg:  '#a04060',
+  spaceErrBorder:'#c05070',
+  spaceErrText:'#ffe0e8',
+};
+
+export default function Keyboard({ activeKey = '', nextKey = '', spaceWaiting = false, spaceError = false }) {
   const ak = activeKey.toLowerCase();
   const nk = nextKey ? nextKey.toLowerCase() : '';
 
@@ -59,38 +45,41 @@ export default function Keyboard({ activeKey = '', nextKey = '' }) {
       className="kb-keyboard-wrap"
       style={{
         display: 'inline-block',
-        background: '#111',
-        borderRadius: 14,
-        padding: '14px 14px 10px',
-        border: '1px solid #2a2a2a',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+        background: THEME.containerBg,
+        borderRadius: 18,
+        padding: '16px 16px 14px',
+        boxShadow: '0 6px 24px rgba(80,40,100,0.18), 0 2px 6px rgba(80,40,100,0.12)',
         userSelect: 'none',
       }}
     >
+      {/* Letter rows */}
       {ROWS.map((row, ri) => (
-        <div key={ri} style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
+        <div key={ri} style={{
+          display: 'flex', gap: 5, marginBottom: 5,
+          paddingLeft: ri === 1 ? 20 : ri === 2 ? 40 : 0,
+        }}>
           {row.map((label, ki) => {
-            const k        = rk(label);
-            const isActive = ak === k || ak === label.toLowerCase();
-            const isNext   = !isActive && nk && (nk === k || nk === label.toLowerCase());
-            const isHome   = HOME_KEYS.has(k);
+            const isActive = ak === label;
+            const isNext   = !isActive && nk === label;
+            const isHome   = HOME_KEYS.has(label);
 
-            let bg      = fingerColor(k);
-            let border  = '1px solid #1e1e1e';
-            let color   = '#666';
-            let shadow  = '0 2px 3px rgba(0,0,0,0.4)';
+            let bg     = THEME.keyBg;
+            let border = `1px solid ${THEME.keyBorder}`;
+            let color  = THEME.keyText;
+            let shadow = '0 2px 0 rgba(80,40,100,0.18)';
+            let transform = 'translateY(0)';
 
             if (isActive) {
-              bg     = '#facc15';
-              border = '1px solid #eab308';
-              color  = '#111';
-              shadow = '0 0 12px rgba(250,204,20,0.45)';
+              bg     = THEME.activeBg;
+              border = `1px solid ${THEME.activeBorder}`;
+              color  = THEME.activeText;
+              shadow = '0 1px 0 rgba(80,40,100,0.3)';
+              transform = 'translateY(1px)';
             } else if (isNext) {
-              // Dim blue hint — next expected key
-              bg     = 'rgba(86,156,214,0.18)';
-              border = '1px solid rgba(86,156,214,0.55)';
-              color  = '#90c2f5';
-              shadow = '0 0 6px rgba(86,156,214,0.2)';
+              bg     = THEME.nextBg;
+              border = `1px solid ${THEME.nextBorder}`;
+              color  = THEME.nextText;
+              shadow = '0 2px 0 rgba(80,40,100,0.25), 0 0 8px rgba(160,130,200,0.35)';
             }
 
             return (
@@ -98,25 +87,26 @@ export default function Keyboard({ activeKey = '', nextKey = '' }) {
                 key={ki}
                 style={{
                   width: keyWidth(label),
-                  height: 38,
+                  height: 40,
                   flexShrink: 0,
                   background: bg,
                   border,
-                  borderRadius: 5,
+                  borderRadius: 9,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, fontWeight: 500, color,
+                  fontSize: 13, fontWeight: 600, color,
                   position: 'relative',
                   boxShadow: shadow,
-                  transition: 'background 0.07s, box-shadow 0.07s, border 0.07s',
+                  transform,
+                  transition: 'background 0.07s, box-shadow 0.07s, transform 0.07s',
                   fontFamily: "'Segoe UI', system-ui, sans-serif",
                 }}
               >
-                {label === ' ' ? '' : label}
+                {label}
                 {isHome && (
                   <span style={{
-                    position: 'absolute', bottom: 4,
-                    width: 6, height: 2,
-                    background: '#ffffff20', borderRadius: 1,
+                    position: 'absolute', bottom: 5,
+                    width: 5, height: 2,
+                    background: 'rgba(255,255,255,0.25)', borderRadius: 1,
                   }} />
                 )}
               </div>
@@ -124,6 +114,43 @@ export default function Keyboard({ activeKey = '', nextKey = '' }) {
           })}
         </div>
       ))}
+
+      {/* Space bar */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 1 }}>
+        {(() => {
+          const isSpaceActive = ak === ' ';
+          let bg     = spaceError  ? THEME.spaceErrBg
+                     : isSpaceActive ? THEME.activeBg
+                     : spaceWaiting ? THEME.spaceBg
+                     : THEME.keyBg;
+          let border = spaceError  ? `1px solid ${THEME.spaceErrBorder}`
+                     : isSpaceActive ? `1px solid ${THEME.activeBorder}`
+                     : spaceWaiting ? `1px solid ${THEME.spaceBorder}`
+                     : `1px solid ${THEME.keyBorder}`;
+          let color  = spaceError || spaceWaiting || isSpaceActive ? '#f0e8ff' : THEME.keyText;
+          let shadow = isSpaceActive ? '0 1px 0 rgba(80,40,100,0.3)' : '0 2px 0 rgba(80,40,100,0.18)';
+          if (spaceWaiting && !isSpaceActive && !spaceError) {
+            shadow = '0 2px 0 rgba(80,40,100,0.25), 0 0 14px rgba(148,112,168,0.55)';
+          }
+          return (
+            <div
+              className={spaceWaiting && !isSpaceActive && !spaceError ? 'kb-space-waiting' : ''}
+              style={{
+                width: 240, height: 40,
+                background: bg, border, borderRadius: 9,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11, fontWeight: 600, color,
+                boxShadow: shadow,
+                transform: isSpaceActive ? 'translateY(1px)' : 'translateY(0)',
+                transition: 'background 0.1s, box-shadow 0.1s, transform 0.07s',
+                letterSpacing: 1.5,
+              }}
+            >
+              {spaceWaiting ? 'SPACE' : ''}
+            </div>
+          );
+        })()}
+      </div>
     </div>
   );
 }

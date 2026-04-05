@@ -60,6 +60,15 @@ kbd { font-family: 'Consolas', 'Courier New', monospace; }
   animation: kb-blink 1.2s step-end infinite;
 }
 
+/* ── Space bar waiting animation ───────────────────────────── */
+@keyframes kb-space-pulse {
+  0%, 100% { box-shadow: 0 2px 0 rgba(80,40,100,0.25), 0 0 8px  rgba(148,112,168,0.35); }
+  50%       { box-shadow: 0 2px 0 rgba(80,40,100,0.35), 0 0 22px rgba(148,112,168,0.70); }
+}
+.kb-space-waiting {
+  animation: kb-space-pulse 1s ease-in-out infinite;
+}
+
 /* ── Mobile ─────────────────────────────────────────────────── */
 @media (max-width: 860px) {
   .kb-keyboard-wrap { transform: scale(0.62); transform-origin: top center; margin-bottom: -100px; }
