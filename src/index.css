@@ -27,22 +27,11 @@ kbd { font-family: 'Consolas', 'Courier New', monospace; }
 
 /* ── Caret blink ─────────────────────────────────────────────── */
 @keyframes kb-caret-blink {
-  0%, 55%  { border-color: var(--accent); }
-  56%, 100% { border-color: transparent; }
+  0%, 55%  { opacity: 1; }
+  56%, 100% { opacity: 0; }
 }
-@keyframes kb-caret-blink-error {
-  0%, 55%  { border-color: var(--error); }
-  56%, 100% { border-color: transparent; }
-}
-
-.kb-caret {
-  border-left: 2px solid var(--accent);
-  animation: kb-caret-blink 1s step-end infinite;
-}
-.kb-caret-error {
-  border-left: 2px solid var(--error);
-  animation: kb-caret-blink-error 0.5s step-end infinite;
-}
+.kb-caret     { animation: kb-caret-blink 1s   step-end infinite; }
+.kb-caret-err { animation: kb-caret-blink 0.4s step-end infinite; }
 
 /* ── Unlock pop ──────────────────────────────────────────────── */
 @keyframes kb-unlock-pop {
