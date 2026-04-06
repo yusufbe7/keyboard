@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 
-const LINE_H  = 58;
+const LINE_H  = 44;
 const VISIBLE = 3;
 
 function Caret({ error = false }) {
@@ -43,7 +43,7 @@ export default function TextDisplay({ words, wordIndex, charIndex, charHasError,
         overflow: 'hidden',
         position: 'relative',
         fontFamily: "'Roboto Mono', 'Consolas', 'Courier New', monospace",
-        fontSize: 26,
+        fontSize: 22,
         lineHeight: `${LINE_H}px`,
         letterSpacing: '0.02em',
         userSelect: 'none',
