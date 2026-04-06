@@ -395,30 +395,40 @@ export default function PracticePage() {
           </div>
         )}
 
-        {/* Live counter row — above text */}
-        {started && !finished && (
-          <div style={{
-            display:'flex', alignItems:'baseline', gap:20, marginBottom:10,
-          }}>
-            {isTest && timeLeft !== null ? (
-              <span style={{ fontSize:44, fontWeight:700, color:'var(--accent)', letterSpacing:-1, lineHeight:1 }}>
-                {Math.floor(timeLeft/60)}:{String(timeLeft%60).padStart(2,'0')}
-              </span>
-            ) : (
-              wpm > 0 && (
-                <span style={{ fontSize:32, fontWeight:700, color:'var(--accent)', lineHeight:1 }}>
-                  {wpm.toFixed(0)}
-                  <span style={{ fontSize:13, color:'var(--sub)', marginLeft:4, fontWeight:400 }}>wpm</span>
+        {/* Live counter — above text */}
+        <div style={{
+          display:'flex', alignItems:'baseline', gap:24, marginBottom:10,
+          minHeight: 52,
+        }}>
+          {started && !finished && (
+            <>
+              {/* Test mode: big countdown; practice mode: elapsed time */}
+              {isTest && timeLeft !== null ? (
+                <span style={{ fontSize:44, fontWeight:700, color:'var(--accent)', letterSpacing:-1, lineHeight:1 }}>
+                  {Math.floor(timeLeft/60)}:{String(timeLeft%60).padStart(2,'0')}
                 </span>
-              )
-            )}
-            {wpm > 0 && (
-              <span style={{ fontSize:14, color:'var(--sub)' }}>
-                {accuracy.toFixed(0)}<span style={{ fontSize:11, marginLeft:2 }}>%</span>
-              </span>
-            )}
-          </div>
-        )}
+              ) : (
+                <span style={{ fontSize:44, fontWeight:700, color:'var(--accent)', letterSpacing:-1, lineHeight:1 }}>
+                  {time}
+                  <span style={{ fontSize:14, color:'var(--sub)', marginLeft:4, fontWeight:400 }}>s</span>
+                </span>
+              )}
+              {/* WPM + accuracy */}
+              {wpm > 0 && (
+                <>
+                  <span style={{ fontSize:22, fontWeight:600, color:'var(--sub)', lineHeight:1 }}>
+                    {wpm.toFixed(0)}
+                    <span style={{ fontSize:12, marginLeft:3, fontWeight:400 }}>wpm</span>
+                  </span>
+                  <span style={{ fontSize:16, color:'var(--sub)', lineHeight:1 }}>
+                    {accuracy.toFixed(0)}
+                    <span style={{ fontSize:11, marginLeft:2 }}>%</span>
+                  </span>
+                </>
+              )}
+            </>
+          )}
+        </div>
 
         {/* Text or results */}
         {finished ? (

@@ -25,13 +25,33 @@ p { margin: 0; }
 button { font-family: inherit; cursor: pointer; transition: color 0.15s, opacity 0.15s; }
 kbd { font-family: 'Consolas', 'Courier New', monospace; }
 
-/* ── Caret blink ─────────────────────────────────────────────── */
+/* ── Caret — border-left on the current character ─────────── */
 @keyframes kb-caret-blink {
+  0%, 55%  { border-left-color: var(--accent); }
+  56%, 100% { border-left-color: transparent; }
+}
+@keyframes kb-caret-blink-err {
+  0%, 55%  { border-left-color: var(--error); }
+  56%, 100% { border-left-color: transparent; }
+}
+@keyframes kb-caret-end-blink {
   0%, 55%  { opacity: 1; }
   56%, 100% { opacity: 0; }
 }
-.kb-caret     { animation: kb-caret-blink 1s   step-end infinite; }
-.kb-caret-err { animation: kb-caret-blink 0.4s step-end infinite; }
+
+.kb-caret-char {
+  border-left: 2px solid var(--accent);
+  margin-left: -1px;
+  animation: kb-caret-blink 1s step-end infinite;
+}
+.kb-caret-err-char {
+  border-left: 2px solid var(--error);
+  margin-left: -1px;
+  animation: kb-caret-blink-err 0.4s step-end infinite;
+}
+.kb-caret-end {
+  animation: kb-caret-end-blink 1s step-end infinite;
+}
 
 /* ── Unlock pop ──────────────────────────────────────────────── */
 @keyframes kb-unlock-pop {

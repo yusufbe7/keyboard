@@ -3,24 +3,6 @@ import { useRef, useEffect, useState } from 'react';
 const LINE_H  = 44;
 const VISIBLE = 3;
 
-function Caret({ error = false }) {
-  return (
-    <span
-      className={error ? 'kb-caret-err' : 'kb-caret'}
-      style={{
-        display: 'inline-block',
-        width: 2,
-        height: '1.15em',
-        background: error ? 'var(--error)' : 'var(--accent)',
-        verticalAlign: 'text-bottom',
-        borderRadius: 1,
-        marginRight: 1,
-        flexShrink: 0,
-      }}
-    />
-  );
-}
-
 export default function TextDisplay({ words, wordIndex, charIndex, charHasError, wordErrors }) {
   const wordRefs  = useRef([]);
   const [offsetY, setOffsetY] = useState(0);
@@ -33,8 +15,6 @@ export default function TextDisplay({ words, wordIndex, charIndex, charHasError,
     setOffsetY(target);
   }, [wordIndex]);
 
-  const hasError = charHasError.size > 0 && charHasError.has(charIndex);
-
   return (
     <div
       className="kb-text-display"
@@ -45,14 +25,14 @@ export default function TextDisplay({ words, wordIndex, charIndex, charHasError,
         fontFamily: "'Roboto Mono', 'Consolas', 'Courier New', monospace",
         fontSize: 22,
         lineHeight: `${LINE_H}px`,
-        letterSpacing: '0.02em',
+        letterSpacing: '0.04em',
         userSelect: 'none',
         cursor: 'text',
       }}
     >
       {/* Bottom fade */}
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, height: LINE_H * 0.7,
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: LINE_H,
         background: 'linear-gradient(transparent, var(--bg))',
         zIndex: 2, pointerEvents: 'none',
       }} />
@@ -65,16 +45,17 @@ export default function TextDisplay({ words, wordIndex, charIndex, charHasError,
           const isDone    = wi < wordIndex;
           const isCurrent = wi === wordIndex;
           const result    = wordErrors[wi];
+          const atEnd     = isCurrent && charIndex >= word.length;
 
           return (
             <span
               key={wi}
               ref={el => { wordRefs.current[wi] = el; }}
-              style={{ marginRight: '0.6em', display: 'inline' }}
+              style={{ marginRight: '0.55em' }}
             >
               {[...word].map((char, ci) => {
-                // Insert caret before current char
-                const showCaret = isCurrent && ci === charIndex;
+                const isCursor = isCurrent && ci === charIndex;
+                const hasErr   = isCursor && charHasError.has(ci);
 
                 let color = 'var(--sub)';
                 if (isDone && result) {
@@ -84,16 +65,30 @@ export default function TextDisplay({ words, wordIndex, charIndex, charHasError,
                 }
 
                 return (
-                  <span key={ci} style={{ display: 'inline' }}>
-                    {showCaret && <Caret error={hasError} />}
-                    <span style={{ color, transition: 'color 0.07s' }}>{char}</span>
+                  <span
+                    key={ci}
+                    className={isCursor ? (hasErr ? 'kb-caret-err-char' : 'kb-caret-char') : ''}
+                    style={{ color, transition: 'color 0.07s' }}
+                  >
+                    {char}
                   </span>
                 );
               })}
 
-              {/* Caret after last char when word is done, waiting for space */}
-              {isCurrent && charIndex >= word.length && (
-                <Caret error={false} />
+              {/* Caret after last char — waiting for space */}
+              {atEnd && (
+                <span
+                  className="kb-caret-end"
+                  style={{
+                    display: 'inline-block',
+                    width: 2,
+                    height: '0.85em',
+                    background: 'var(--accent)',
+                    verticalAlign: 'middle',
+                    borderRadius: 1,
+                    marginLeft: 1,
+                  }}
+                />
               )}
             </span>
           );
