@@ -256,6 +256,7 @@ export default function PracticePage() {
 
   const handleKey = useCallback((e) => {
     if (e.key === 'Tab') { e.preventDefault(); doRestart(); return; }
+    if (e.key === 'Enter' && finished) { doRestart(); return; }
     setActiveKey(e.key);
     setTimeout(() => setActiveKey(''), 150);
     if (finished) return;
@@ -323,13 +324,20 @@ export default function PracticePage() {
       onKeyDown={handleKey} tabIndex={0} autoFocus
       style={{ outline:'none', minHeight:'calc(100vh - 52px)', display:'flex', flexDirection:'column', alignItems:'center' }}
     >
-      {/* ── Toolbar ── */}
-      <div style={{
-        display:'flex', alignItems:'center', gap:6,
-        marginTop: 40, marginBottom: 32,
-        color:'var(--sub)', fontSize:13,
-        flexWrap:'wrap', justifyContent:'center',
-      }}>
+      {/* ── Toolbar — fades while typing ── */}
+      <div
+        style={{
+          display:'flex', alignItems:'center', gap:6,
+          marginTop: 40, marginBottom: 32,
+          color:'var(--sub)', fontSize:13,
+          flexWrap:'wrap', justifyContent:'center',
+          opacity: started && !finished ? 0 : 1,
+          transition: 'opacity 0.4s ease',
+          pointerEvents: started && !finished ? 'none' : 'auto',
+        }}
+        onMouseEnter={e => { if (started && !finished) e.currentTarget.style.opacity = '1'; }}
+        onMouseLeave={e => { if (started && !finished) e.currentTarget.style.opacity = '0'; }}
+      >
         {/* Mode pills */}
         {[['practice','practice'],['test60','1 min'],['test120','2 min']].map(([m,label])=>(
           <button key={m} onClick={()=>switchMode(m)} style={{
@@ -344,9 +352,24 @@ export default function PracticePage() {
 
         {/* Sound */}
         <button onClick={()=>setSoundOn(v=>!v)} style={{
-          background:'none', border:'none', fontSize:14, cursor:'pointer',
+          background:'none', border:'none', cursor:'pointer',
           color: soundOn ? 'var(--sub)' : 'var(--sub-alt)', padding:'4px 6px',
-        }} title="Toggle sound">{soundOn?'♪':'♪̶'}</button>
+        }} title="Toggle sound">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            {soundOn ? (
+              <>
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none"/>
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              </>
+            ) : (
+              <>
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" fill="none"/>
+                <line x1="23" y1="9" x2="17" y2="15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                <line x1="17" y1="9" x2="23" y2="15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              </>
+            )}
+          </svg>
+        </button>
 
         {/* Lang */}
         <button onClick={switchLang} style={{
@@ -356,7 +379,7 @@ export default function PracticePage() {
 
         <span style={{ width:1, height:16, background:'var(--sub-alt)', margin:'0 4px' }} />
 
-        {/* Tab hint */}
+        {/* Hints */}
         <span style={{ fontSize:12, color:'var(--sub-alt)' }}>
           <kbd style={{ background:'var(--sub-alt)', borderRadius:3, padding:'1px 5px', fontSize:11, color:'var(--sub)' }}>tab</kbd>
           {' '}restart
@@ -427,8 +450,8 @@ export default function PracticePage() {
                 ? `${wordIndex} / ${words.length} words`
                 : isTest && !started ? 'start typing…' : ''}
             </span>
-            {/* Letter unlock mini-bar (practice) */}
-            {mode === 'practice' && (
+            {/* Letter unlock mini-bar — hidden while actively typing */}
+            {mode === 'practice' && !started && (
               <div style={{ display:'flex', gap:3 }}>
                 {UNLOCK_ORDER.map((letter, i) => {
                   const unlocked  = i < unlockedCount;
