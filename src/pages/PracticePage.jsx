@@ -372,13 +372,28 @@ export default function PracticePage() {
           </div>
         )}
 
-        {/* Timer — test mode, big */}
-        {isTest && started && !finished && timeLeft !== null && (
+        {/* Live counter row — above text */}
+        {started && !finished && (
           <div style={{
-            fontSize:44, fontWeight:700, color:'var(--accent)',
-            marginBottom:12, letterSpacing:-1,
+            display:'flex', alignItems:'baseline', gap:20, marginBottom:10,
           }}>
-            {Math.floor(timeLeft/60)}:{String(timeLeft%60).padStart(2,'0')}
+            {isTest && timeLeft !== null ? (
+              <span style={{ fontSize:44, fontWeight:700, color:'var(--accent)', letterSpacing:-1, lineHeight:1 }}>
+                {Math.floor(timeLeft/60)}:{String(timeLeft%60).padStart(2,'0')}
+              </span>
+            ) : (
+              wpm > 0 && (
+                <span style={{ fontSize:32, fontWeight:700, color:'var(--accent)', lineHeight:1 }}>
+                  {wpm.toFixed(0)}
+                  <span style={{ fontSize:13, color:'var(--sub)', marginLeft:4, fontWeight:400 }}>wpm</span>
+                </span>
+              )
+            )}
+            {wpm > 0 && (
+              <span style={{ fontSize:14, color:'var(--sub)' }}>
+                {accuracy.toFixed(0)}<span style={{ fontSize:11, marginLeft:2 }}>%</span>
+              </span>
+            )}
           </div>
         )}
 

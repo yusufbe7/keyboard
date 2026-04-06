@@ -1,7 +1,25 @@
 import { useRef, useEffect, useState } from 'react';
 
-const LINE_H     = 58;  // px per line (font 26px * lineHeight 2.2)
-const VISIBLE    = 3;   // visible lines
+const LINE_H  = 58;
+const VISIBLE = 3;
+
+function Caret({ error = false }) {
+  return (
+    <span
+      className={error ? 'kb-caret-err' : 'kb-caret'}
+      style={{
+        display: 'inline-block',
+        width: 2,
+        height: '1.15em',
+        background: error ? 'var(--error)' : 'var(--accent)',
+        verticalAlign: 'text-bottom',
+        borderRadius: 1,
+        marginRight: 1,
+        flexShrink: 0,
+      }}
+    />
+  );
+}
 
 export default function TextDisplay({ words, wordIndex, charIndex, charHasError, wordErrors }) {
   const wordRefs  = useRef([]);
@@ -10,11 +28,12 @@ export default function TextDisplay({ words, wordIndex, charIndex, charHasError,
   useEffect(() => {
     const el = wordRefs.current[wordIndex];
     if (!el) return;
-    const line = Math.floor(el.offsetTop / LINE_H);
-    // keep current line as 2nd visible row (1 line of context above)
+    const line   = Math.floor(el.offsetTop / LINE_H);
     const target = Math.max(0, line - 1) * LINE_H;
     setOffsetY(target);
   }, [wordIndex]);
+
+  const hasError = charHasError.size > 0 && charHasError.has(charIndex);
 
   return (
     <div
@@ -33,12 +52,11 @@ export default function TextDisplay({ words, wordIndex, charIndex, charHasError,
     >
       {/* Bottom fade */}
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, height: LINE_H * 0.8,
-        background: `linear-gradient(transparent, var(--bg))`,
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: LINE_H * 0.7,
+        background: 'linear-gradient(transparent, var(--bg))',
         zIndex: 2, pointerEvents: 'none',
       }} />
 
-      {/* Scrolling wrapper */}
       <div style={{
         transform: `translateY(-${offsetY}px)`,
         transition: 'transform 0.2s ease',
@@ -52,43 +70,30 @@ export default function TextDisplay({ words, wordIndex, charIndex, charHasError,
             <span
               key={wi}
               ref={el => { wordRefs.current[wi] = el; }}
-              style={{
-                marginRight: '0.6em',
-                display: 'inline-block',
-              }}
+              style={{ marginRight: '0.6em', display: 'inline' }}
             >
               {[...word].map((char, ci) => {
-                let color  = 'var(--sub)';    // untyped / future
-                let caretClass = '';
+                // Insert caret before current char
+                const showCaret = isCurrent && ci === charIndex;
 
+                let color = 'var(--sub)';
                 if (isDone && result) {
                   color = result[ci] ? 'var(--correct)' : 'var(--error)';
-                } else if (isCurrent) {
-                  if (ci < charIndex) {
-                    color = charHasError.has(ci) ? 'var(--error)' : 'var(--correct)';
-                  } else if (ci === charIndex) {
-                    // Cursor position
-                    caretClass = charHasError.has(ci) ? 'kb-caret-error' : 'kb-caret';
-                    color = charHasError.has(ci) ? 'var(--error)' : 'var(--sub)';
-                  }
+                } else if (isCurrent && ci < charIndex) {
+                  color = charHasError.has(ci) ? 'var(--error)' : 'var(--correct)';
                 }
 
                 return (
-                  <span
-                    key={ci}
-                    className={caretClass}
-                    style={{ color, transition: 'color 0.07s' }}
-                  >
-                    {char}
+                  <span key={ci} style={{ display: 'inline' }}>
+                    {showCaret && <Caret error={hasError} />}
+                    <span style={{ color, transition: 'color 0.07s' }}>{char}</span>
                   </span>
                 );
               })}
-              {/* Caret at end of word (waiting for space) */}
-              {isCurrent && charIndex === word.length && (
-                <span
-                  className="kb-caret"
-                  style={{ display: 'inline-block', width: 0 }}
-                />
+
+              {/* Caret after last char when word is done, waiting for space */}
+              {isCurrent && charIndex >= word.length && (
+                <Caret error={false} />
               )}
             </span>
           );
